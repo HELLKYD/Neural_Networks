@@ -1,76 +1,96 @@
 import java.util.Random;
 
-public class NeuralNetwork {
+public class N2 {
+    public static void main(String[] args) {
+        float[] inp = {2.1f, 1.2f, 4.5f};
+        Layer l1 = new Layer(3, inp);
+        float[] out = l1.computeInputs();
+        float[] res = l1.activate(out);
 
-	public static void main(String[] args) {
-		float[] inp = { 2.1f, 1.2f, 4.5f };
-		Neuron n1 = new Neuron(inp);
-		float out = n1.computeInputs();
-		System.out.println(out);
-		float res = n1.activate();
-		System.out.println(res);
-	}
+        Neuron fNeuron = new Neuron(res);
+        float fOut = fNeuron.computeInputs();
+        float fRes = fNeuron.activate(fOut);
+        System.out.println(fRes);
+    }
 
-	private static interface Predictor {
-		float computeInputs();
+    static interface Predictor {
+        float computeInputs();
+        float activate(float x);
+    }
 
-		float activate();
+    static class Neuron implements Predictor {
+        float[] weights;
+        float[] inputs;
+        float bias;
 
-		float getInput();
-	}
+        public Neuron(float[] inputs) {
+            Random r = new Random();
+            this.bias = r.nextFloat();
+            this.weights = new float[inputs.length];
+            for(int i = 0; i < inputs.length; i++) {
+                this.weights[i] = r.nextFloat();
+            }
+            this.inputs = inputs;
+        }
 
-	private static class Neuron implements Predictor {
-		float[] weights;
-		float[] inputs;
-		float bias;
-		float out;
+        public float computeInputs() {
+            float out = 0.0f;
+            for(int i = 0; i < this.weights.length; i++) {
+                out += this.inputs[i] * this.weights[i];
+            }
+            out += this.bias;
+            return out;
+        }
 
-		public Neuron(float[] inputs) {
-			this.bias = new Random().nextFloat();
-			this.weights = new float[inputs.length];
-			for (int i = 0; i < inputs.length; i++) {
-				weights[i] = new Random().nextFloat();
-			}
-			this.inputs = inputs;
-		}
+        public float activate(float in) {
+            return new Activator((x) -> (float) (1 / (1 + Math.exp(-x))), this).activate(in);
+        }
+    }
 
-		public float computeInputs() {
-			float out = 0;
-			for (int i = 0; i < this.inputs.length; i++) {
-				out += this.inputs[i] * this.weights[i];
-			}
-			out += this.bias;
-			this.out = out;
-			return out;
-		}
+    @FunctionalInterface
+    static interface ActivationFunction {
+        float function(float x);
+    }
 
-		public float activate() {
-			return new Activator<Neuron>((in) -> (float) (1 / (1 + Math.exp(-in))), this).activate();
-		}
+    static class Activator {
+        ActivationFunction aF;
+        Predictor pred;
 
-		public float getInput() {
-			return this.out;
-		}
-	}
+        public Activator(ActivationFunction af, Predictor pred) {
+            this.aF = af;
+            this.pred = pred;
+        }
 
-	@FunctionalInterface
-	private static interface ActivationFunction {
-		float activate(float in);
-	}
+        public float activate(float in) {
+            return this.aF.function(in);
+        }
+    }
 
-	private static class Activator<T extends Predictor> {
-		ActivationFunction aF;
-		T predictor;
+    static class Layer {
+        Neuron[] neurons;
 
-		public Activator(ActivationFunction af, T pred) {
-			this.aF = af;
-			this.predictor = pred;
-		}
+        public Layer(int numNeurons, float[] inputs) {
+            neurons = new Neuron[numNeurons];
+            for (int i = 0; i < numNeurons; i++) {
+                Neuron temp = new Neuron(inputs);
+                neurons[i] = temp;
+            }
+        }
 
-		public float activate() {
-			return this.aF.activate(this.predictor.getInput());
-		}
-	}
+        public float[] computeInputs() {
+            float out[] = new float[neurons.length];
+            for(int i = 0; i < out.length; i++) {
+                out[i] = neurons[i].computeInputs();
+            }
+            return out;
+        }
 
+        public float[] activate(float[] in) {
+            float out[] = new float[this.neurons.length];
+            for(int i = 0; i < out.length; i++) {
+                out[i] = neurons[i].activate(in[i]);
+            }
+            return out;
+        }
+    }
 }
-
