@@ -1,6 +1,6 @@
 import java.util.Random;
 
-public class N2 {
+public class NeuralNetwork {
     public static void main(String[] args) {
         float[] inp = {2.1f, 1.2f, 4.5f};
         Layer l1 = new Layer(3, inp);
