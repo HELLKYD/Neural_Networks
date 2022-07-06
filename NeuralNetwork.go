@@ -88,18 +88,46 @@ func (l *Layer) activate(in []float64) []float64 {
 	return out
 }
 
-func main() {
-	inp := []float64{2.1, 1.2, 4.5}
-	var l1 *Layer = createLayer(3, inp)
-	out := l1.computeInputs()
-	res := l1.activate(out)
-	nout := Neuron{}
-	nout.NewNeuron(res)
-	noutout := nout.computeInputs()
-	resout := nout.activate(noutout)
-	fmt.Printf("l1: %v\n", l1)
-	fmt.Printf("out: %v\n", out)
-	fmt.Printf("res: %v\n", res)
-	fmt.Printf("resout: %v\n", resout)
+type Network struct {
+	inputLayer     Layer
+	hiddenLayers   []Layer
+	outputLayer    Layer
+	tempLayerOut   []float64
+	inputs         []float64
+	neuronCountOut float64
+	result         []float64
 }
 
+func (n *Network) useLayers(layerCount int, neuronCount int) {
+	n.inputLayer = *createLayer(neuronCount, n.inputs)
+	inLayerOut := n.inputLayer.computeInputs()
+	inLayerRes := n.inputLayer.activate(inLayerOut)
+	n.tempLayerOut = inLayerRes
+	for i := 0; i < layerCount; i++ {
+		temp_layer := *createLayer(neuronCount, n.tempLayerOut)
+		n.hiddenLayers = append(n.hiddenLayers, temp_layer)
+		temp_out := temp_layer.computeInputs()
+		n.tempLayerOut = temp_layer.activate(temp_out)
+	}
+	fl := *createLayer(int(n.neuronCountOut), n.tempLayerOut)
+	n.outputLayer = fl
+	fl_out := fl.computeInputs()
+	fl_res := fl.activate(fl_out)
+	n.result = append(n.result, fl_res...)
+}
+
+func newNetwork(inp []float64, neuronsPerLayer int, neuronCountOut int, layerCount int) *Network {
+	out := Network{inputs: inp, neuronCountOut: float64(neuronCountOut),
+		tempLayerOut: make([]float64, 0),
+		hiddenLayers: make([]Layer, 0),
+		result:       make([]float64, 0),
+	}
+	out.useLayers(layerCount, neuronsPerLayer)
+	return &out
+}
+
+func main() {
+	inp := []float64{2.1, 1.2, 4.5}
+	net := *newNetwork(inp, 3, 1, 3)
+	fmt.Printf("result: %v\n", net.result)
+}
